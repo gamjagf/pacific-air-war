@@ -244,6 +244,7 @@ if (DEBUG) {
   hud.hidden = false;
   // 시험용: 화면 그리기 없이 게임 시간을 n장면만큼 빨리 돌림 (브라우저가 느리게 돌 때 확인용)
   let simT = 0;
+  window.__three = { scene, camera, renderer, world }; // 시험·홍보 그림 만들 때 카메라 직접 잡기용
   window.__step = (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) update(simT += dt, dt); world.update(simT); renderer.render(scene, camera); };
 }
 function frame() {
