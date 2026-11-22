@@ -1,0 +1,12 @@
+# 공개 저장소에 올리지 않는 것
+# 작업 인계서 (개인 정보가 있음)
+CLAUDE.md
+# Claude Code 설정
+.claude/
+# 원본 .blend 파일 (용량이 큼, 게임에는 안 씀)
+assets/models/_src/
+.vercel/
+__pycache__/
+*.pyc
+Thumbs.db
+desktop.ini
