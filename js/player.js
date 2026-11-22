@@ -4,7 +4,8 @@ import * as THREE from 'three';
 
 const SPEED = 75;          // 비행 속도 (m/초)
 const MAX_BANK = 1.05;     // 최대 기울기 (라디안, 약 60도)
-const TURN = 0.95;         // 기울기에 따른 선회 빠르기
+const TURN = 1.7;          // 기울기에 따른 선회 빠르기 (끝까지 밀면 반 바퀴 약 2초)
+const ROLL_RATE = 5;       // 조이스틱을 따라 기우는 빠르기
 const PITCH_RATE = 0.85;   // 기수 올리고 내리는 빠르기
 const MAX_PITCH = 0.95;    // 최대 상승·하강 각 (약 55도)
 const MIN_ALT = 45, MAX_ALT = 1300;
@@ -29,7 +30,7 @@ export function createPlayer(mesh) {
     update(dt, ctl) {
       // 1) 기울기: 조이스틱 좌우를 따라가고, 놓으면 수평으로
       const targetRoll = -ctl.x * MAX_BANK;
-      p.roll += (targetRoll - p.roll) * Math.min(1, dt * 3.2);
+      p.roll += (targetRoll - p.roll) * Math.min(1, dt * ROLL_RATE);
 
       // 2) 기수: 조이스틱 위아래. 놓으면 천천히 수평 비행으로
       if (ctl.y !== 0) p.pitch += ctl.y * PITCH_RATE * dt;
