@@ -1,4 +1,7 @@
-﻿assets/models/_src
-tools
-.claude
-CLAUDE.md
+﻿/assets/models/_src
+/assets/models/_src/**
+/tools
+/.claude
+/CLAUDE.md
+.env*
+/.vercel
