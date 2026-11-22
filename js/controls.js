@@ -1,7 +1,7 @@
 // 스마트폰 터치 조작
 // - 화면 왼쪽 절반 아무 곳이나 누르면 그 자리에 조이스틱이 생기고, 끌면 방향이 정해짐
-// - 오른쪽 아래: 기관총(누르고 있으면 계속 발사), 폭탄(한 번 누르면 한 발)
-// - 컴퓨터 시험용 키보드: 방향키/WASD = 조종, 스페이스 = 기관총, B = 폭탄
+// - 오른쪽 아래: 기관총(누르고 있으면 계속 발사), 폭탄(한 번 누르면 한 발), 뒤로 돌기(한 번 누르면 공중제비로 반대 방향)
+// - 컴퓨터 시험용 키보드: 방향키/WASD = 조종, 스페이스 = 기관총, B = 폭탄, Q = 뒤로 돌기
 // 손가락 여러 개를 동시에 써도 되도록 손가락 번호(pointerId)별로 따로 기억함
 
 const RADIUS = 60; // 조이스틱이 움직이는 최대 거리(px)
@@ -11,6 +11,7 @@ export function createControls() {
     x: 0, y: 0,          // 조이스틱 -1~1 (x: 오른쪽 +, y: 위쪽 +)
     fire: false,         // 기관총 버튼을 누르고 있는지
     bombQueued: false,   // 폭탄 버튼을 눌렀는지 (게임이 한 번 읽으면 꺼짐)
+    turnQueued: false,   // 뒤로 돌기 버튼을 눌렀는지
     enabled: true,
   };
 
@@ -18,6 +19,7 @@ export function createControls() {
   const knob = stick.querySelector('i');
   const btnGun = document.getElementById('btnGun');
   const btnBomb = document.getElementById('btnBomb');
+  const btnTurn = document.getElementById('btnTurn');
 
   // ---------- 조이스틱 ----------
   let stickId = null, cx = 0, cy = 0;
@@ -80,6 +82,7 @@ export function createControls() {
   }
   holdButton(btnGun, () => { state.fire = true; }, () => { state.fire = false; });
   holdButton(btnBomb, () => { state.bombQueued = true; }, () => {});
+  holdButton(btnTurn, () => { state.turnQueued = true; }, () => {});
 
   // ---------- 키보드 (컴퓨터에서 시험할 때) ----------
   const keys = new Set();
@@ -94,6 +97,7 @@ export function createControls() {
     keys.add(e.code);
     if (e.code === 'Space') { state.fire = true; btnGun.classList.add('on'); }
     if (e.code === 'KeyB') { state.bombQueued = true; }
+    if (e.code === 'KeyQ') { state.turnQueued = true; }
     keyAxis();
   });
   window.addEventListener('keyup', e => {
@@ -105,7 +109,7 @@ export function createControls() {
   // 앱을 내리거나 다른 창으로 가면 누르던 것을 모두 놓음 (버튼이 눌린 채로 남지 않게)
   const resetAll = () => {
     keys.clear(); releaseStick(); state.fire = false;
-    btnGun.classList.remove('on'); btnBomb.classList.remove('on');
+    btnGun.classList.remove('on'); btnBomb.classList.remove('on'); btnTurn.classList.remove('on');
   };
   window.addEventListener('blur', resetAll);
   document.addEventListener('visibilitychange', () => { if (document.hidden) resetAll(); });
@@ -113,6 +117,7 @@ export function createControls() {
   // 폭탄 요청을 한 번 꺼내 쓰기
   state.takeBomb = () => { const b = state.bombQueued; state.bombQueued = false; return b; };
   // 스테이지가 끝나거나 다시 시작할 때 누르던 것을 모두 놓음
-  state.reset = () => { resetAll(); state.bombQueued = false; };
+  state.takeTurn = () => { const b = state.turnQueued; state.turnQueued = false; return b; };
+  state.reset = () => { resetAll(); state.bombQueued = false; state.turnQueued = false; };
   return state;
 }

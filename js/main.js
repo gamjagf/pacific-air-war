@@ -41,7 +41,7 @@ function setupGame() {
   window.__audio = audio; // 시험할 때 확인용
   const ctl = createControls();
   ctl.enabled = false;
-  const IDLE = { x: 0, y: 0, fire: false, takeBomb: () => false }; // 시작·결과 화면에서는 저절로 날기
+  const IDLE = { x: 0, y: 0, fire: false, takeBomb: () => false, takeTurn: () => false }; // 시작·결과 화면에서는 저절로 날기
   const NONE = [];
   const effects = createEffects(scene);
   const weapons = createWeapons(scene);
@@ -189,6 +189,7 @@ function setupGame() {
       ui.markers(camera, targets, weapons.lockTarget);
       ui.setGoal(game.stage.goalText());
       ui.bombReady(weapons.bombReady());
+      ui.turnReady(player.turnReady());
       // 많이 다치면 꼬리에서 연기
       if (game.hp < 40 && (game.smokeT -= dt) <= 0) {
         game.smokeT = 0.08;

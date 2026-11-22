@@ -50,6 +50,11 @@
   #btnBomb { right: calc(124px + env(safe-area-inset-right)); bottom: calc(26px + env(safe-area-inset-bottom));
     width: 70px; height: 70px; font-size: 15px; background: radial-gradient(circle at 40% 35%, #5c6d7c, #26323d); }
   #btnBomb.wait { opacity: .45; }
+  /* 뒤로 돌기: 기관총 버튼 바로 위 */
+  #btnTurn { right: calc(32px + env(safe-area-inset-right)); bottom: calc(150px + env(safe-area-inset-bottom));
+    width: 72px; height: 72px; font-size: 14px; line-height: 1.15; text-align: center;
+    background: radial-gradient(circle at 40% 35%, #3f8fc4, #164a6e); }
+  #btnTurn.wait { opacity: .45; }
   #crosshair { position: fixed; left: 50%; top: 42%; width: 34px; height: 34px; margin: -17px 0 0 -17px; z-index: 4;
     pointer-events: none; border: 2px solid #ffe08acc; border-radius: 50%; }
   #crosshair::after { content: ''; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px;
@@ -147,7 +152,8 @@
 <div id="stick" hidden><i></i></div>
 <div id="btnGun" class="btn" hidden>기관총</div>
 <div id="btnBomb" class="btn" hidden>폭탄</div>
-<div id="hint" class="off">왼쪽을 눌러 끌면 조종 · 빨간 네모가 적 · 오른쪽 버튼으로 발사</div>
+<div id="btnTurn" class="btn" hidden>↩<br>뒤로</div>
+<div id="hint" class="off">왼쪽을 눌러 끌면 조종 · 빨간 네모가 적 · 오른쪽 버튼으로 발사 · ↩ 뒤로 버튼은 반대 방향으로</div>
 <div id="banner"><b></b><span></span></div>
 <div id="title" class="screen" hidden>
   <h1>태평양 공중전</h1>

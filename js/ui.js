@@ -6,7 +6,7 @@ export function createUI() {
   const hudTop = $('hudTop'), scoreEl = $('score'), goalEl = $('goal'), hpFill = $('hpbar').firstElementChild;
   const flashEl = $('flash'), bannerEl = $('banner'), titleEl = $('title'), resultEl = $('result');
   const crosshair = $('crosshair'), hint = $('hint'), marksBox = $('marks');
-  const stick = $('stick'), btnGun = $('btnGun'), btnBomb = $('btnBomb');
+  const stick = $('stick'), btnGun = $('btnGun'), btnBomb = $('btnBomb'), btnTurn = $('btnTurn');
 
   // 적 표시: 화면 안이면 네모, 화면 밖이면 가장자리 화살표
   const marks = Array.from({ length: 12 }, () => {
@@ -42,6 +42,7 @@ export function createUI() {
       stick.hidden = !on;
       btnGun.hidden = !on;
       btnBomb.hidden = !(on && bomb);
+      btnTurn.hidden = !on;
       crosshair.hidden = !on;
       clearTimeout(hintTimer);
       hint.classList.toggle('off', !on);
@@ -64,6 +65,7 @@ export function createUI() {
       if (f != null) bar.querySelector('i').style.width = (Math.max(0, f) * 100) + '%';
     },
     bombReady(ready) { btnBomb.classList.toggle('wait', !ready); },
+    turnReady(ready) { btnTurn.classList.toggle('wait', !ready); },
 
     // 화면 가운데 큰 안내 글 (몇 초 뒤 사라짐)
     banner(big, small = '', ms = 2800) {
