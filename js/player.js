@@ -3,8 +3,8 @@
 import * as THREE from 'three';
 
 const SPEED = 75;          // 비행 속도 (m/초)
-const MAX_BANK = 1.05;     // 최대 기울기 (라디안, 약 60도)
-const TURN = 1.7;          // 기울기에 따른 선회 빠르기 (끝까지 밀면 반 바퀴 약 2초)
+const MAX_BANK = 1.75;     // 최대 기울기 (라디안, 약 100도 = 90도 넘게 눕힘)
+const TURN = 1.35;         // 기울기에 따른 선회 빠르기 (끝까지 밀면 반 바퀴 약 1.5초)
 const ROLL_RATE = 5;       // 조이스틱을 따라 기우는 빠르기
 const PITCH_RATE = 0.85;   // 기수 올리고 내리는 빠르기
 const MAX_PITCH = 0.95;    // 최대 상승·하강 각 (약 55도)

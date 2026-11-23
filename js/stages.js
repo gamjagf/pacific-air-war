@@ -13,10 +13,12 @@ export const STAGES = [
     bgm: 'bgm',
     create(ctx) {
       const squad = createSquad(ctx);
-      // 1차 편대 3대가 앞에서, 2차 편대 5대가 오른쪽 앞에서 옴
+      // 편대 4개가 쉴 틈 없이 이어서 옴 (앞 편대가 2대만 남으면 다음 편대 출발 → 화면에 늘 여러 대)
       const waves = [
-        { count: 3, angle: 0 },
-        { count: 5, angle: -0.8, banner: ['2차 편대 접근!', '오른쪽 앞에서 제로기 5대가 온다'] },
+        { count: 4, angle: 0 },
+        { count: 5, angle: -0.5, banner: ['2차 편대 접근!', '오른쪽 앞에서 제로기 5대가 온다'] },
+        { count: 5, angle: 0.5, banner: ['3차 편대 접근!', '왼쪽 앞에서 제로기 5대가 온다'] },
+        { count: 6, angle: 0, banner: ['마지막 편대!', '정면에서 제로기 6대가 온다'] },
       ];
       let wave = 0, pending = false, wait = 0;
       squad.spawnFormation(waves[0].count, waves[0]);
@@ -26,10 +28,10 @@ export const STAGES = [
         targets: squad.list,
         update(dt) {
           squad.update(dt);
-          if (squad.remaining() > 0 || wave >= waves.length - 1) return;
-          if (!pending) {                     // 한 편대를 다 잡으면 잠깐 쉬고 다음 편대
-            pending = true; wait = 3;
-            ctx.heal(25);                     // 쉬는 동안 기체를 조금 고쳐 줌
+          if (squad.remaining() > 2 || wave >= waves.length - 1) return;
+          if (!pending) {                     // 거의 다 잡으면 1초 뒤 다음 편대
+            pending = true; wait = 1;
+            ctx.heal(15);                     // 기체를 조금 고쳐 줌
             ctx.ui.banner(...waves[wave + 1].banner);
           } else if ((wait -= dt) <= 0) {
             pending = false;
@@ -88,10 +90,10 @@ export const STAGES = [
       fleet.add('destroyer', -280, -950);
       fleet.add('destroyer', 280, -1250);
       fleet.add('destroyer', 0, -1500);
-      squad.spawnFormation(2, { dist: 1000 });
+      squad.spawnFormation(3, { dist: 800 });
 
       const targets = [];          // 제로기 + 배를 한 목록으로 (총알·표시·조준 도움에 씀)
-      let t = 0, tips = 0, launched = false, sunkT = 0;
+      let t = 0, tips = 0, launched = false, sunkT = 0, reinforce = 3;
       const deck = new THREE.Vector3();
       return {
         targets,
@@ -112,6 +114,13 @@ export const STAGES = [
             ctx.ui.banner('보스가 화났다!', '갑판에서 제로기 2대가 날아오른다', 3000);
             ctx.heal(20);            // 조금 힘내라고 기체를 고쳐 줌
           }
+          // 지키는 제로기가 2대 이하로 줄면 3초 뒤 앞쪽에서 2대가 새로 옴 (보스가 살아 있는 동안 계속)
+          if (boss.targetable && squad.remaining() <= 2) {
+            if ((reinforce -= dt) <= 0) {
+              reinforce = 3;
+              squad.spawnFormation(2, { angle: (Math.random() - 0.5) * 1.2 });
+            }
+          } else reinforce = 3;
           ctx.ui.setBoss(boss.targetable ? boss.hp / boss.maxHp : null); // 격침되면 막대를 숨김
           if (!boss.targetable) sunkT += dt;
         },

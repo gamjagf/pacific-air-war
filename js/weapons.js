@@ -3,8 +3,9 @@
 import * as THREE from 'three';
 
 const FIRE_RATE = 14;        // 초당 총알 수
-const BULLET_SPEED = 520;    // 비행기 속도에 더해지는 총알 속도 (m/초)
-const BULLET_LIFE = 1.3;
+const BULLET_SPEED = 650;    // 비행기 속도에 더해지는 총알 속도 (m/초)
+const BULLET_LIFE = 2.2;     // 약 1.5km 날아감
+const BULLET_GROW = 250;     // 멀리 갈수록 예광탄을 굵게 → 멀리까지 날아가는 게 눈에 보임
 const BOMB_COOLDOWN = 1.4;   // 폭탄 다시 쓸 수 있을 때까지 (초)
 const GRAVITY = 14;          // 게임이라 실제(9.8)보다 조금 빨리 떨어지게
 const ASSIST_ANGLE = 0.1;    // 조준 도움: 조준점에서 약 6도 안의 적이면
@@ -23,7 +24,7 @@ export function segmentHitsSphere(a, b, c, r) {
 
 export function createWeapons(scene) {
   // ---------- 총알 ----------
-  const bulletGeo = new THREE.BoxGeometry(0.4, 0.4, 9);
+  const bulletGeo = new THREE.BoxGeometry(0.5, 0.5, 16);
   const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffd27a, fog: false, toneMapped: false });
   const bullets = [];
   for (let i = 0; i < 70; i++) {
@@ -104,7 +105,8 @@ export function createWeapons(scene) {
         const b = bullets[bi = (bi + 1) % bullets.length];
         b.alive = true; b.life = BULLET_LIFE;
         b.mesh.visible = true;
-        b.mesh.position.set(side * 2.6, -0.3, -2).applyMatrix4(player.mesh.matrixWorld);
+        b.mesh.position.set(side * 2.6, -0.3, -8).applyMatrix4(player.mesh.matrixWorld);
+        b.mesh.scale.set(1, 1, 1);
         b.prev.copy(b.mesh.position);
         dir.copy(player.forward);
         if (best) {
@@ -122,6 +124,8 @@ export function createWeapons(scene) {
         b.life -= dt;
         b.prev.copy(b.mesh.position);
         b.mesh.position.addScaledVector(b.vel, dt);
+        const g = 1 + (BULLET_LIFE - b.life) * BULLET_SPEED / BULLET_GROW;
+        b.mesh.scale.set(g, g, 1 + (g - 1) * 0.5);
         for (const t of targets) {                   // 적에 맞음 (배는 testSeg로 배 모양 판정)
           if (!t.targetable) continue;
           const hitIt = t.testSeg ? t.testSeg(b.prev, b.mesh.position)

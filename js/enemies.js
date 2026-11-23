@@ -4,11 +4,14 @@ import * as THREE from 'three';
 import { segmentHitsSphere } from './weapons.js';
 
 const SPEED = 66;            // 가까이에선 내 비행기(75)보다 느림 → 뒤를 잡을 수 있음
-const CATCHUP_SPEED = 90;    // 멀리 떨어지면 빨라져서 다시 싸움에 끼어듦
-const MAX_YAW_RATE = 0.62;   // 도는 빠르기 (라디안/초)
+const CATCHUP_SPEED = 105;   // 멀리 떨어지면 빨라져서 얼른 다시 싸움에 끼어듦
+const MAX_YAW_RATE = 0.8;    // 도는 빠르기 (라디안/초). 빨리 돌아와서 화면에 자주 보이게
 const PITCH_RATE = 0.55, MAX_PITCH = 0.6;
 const HP = 4;                // 총알 4발 맞으면 격추
-const RADIUS = 7;            // 명중 판정 크기 (실제 날개보다 넉넉하게)
+const SIZE = 1.7;            // 적 비행기를 실제보다 크게 보이게 (화면에서 잘 보이도록)
+const RADIUS = 11;           // 명중 판정 크기 (커진 날개보다 넉넉하게)
+const AWAY_DIST = 200, AWAY_TIME = 2.5, RETURN_DIST = 420; // 화면 밖(뒤·옆)에 2.5초 넘게 있으면 내 앞 420m로 다시 데려옴
+const FLEE_SPEED = 58;       // 다시 나타난 적은 내 앞에서 같은 쪽으로 천천히 날아감 → 쫓아가서 쏘기 쉬움
 const FIRE_RANGE = 520, FIRE_CONE = 0.12;
 const SHOT_RATE = 7, BURST = 0.9;          // 0.9초 동안 연사하고
 const COOL_MIN = 1.8, COOL_RAND = 1.0;     // 2~3초 쉼
@@ -56,6 +59,7 @@ export function createSquad(ctx) {
   // ---------- 적 한 대 만들기 ----------
   function makeEnemy(pos, yaw, latVec) {
     const mesh = models.make('enemy');
+    mesh.scale.setScalar(SIZE);
     mesh.position.copy(pos);
     scene.add(mesh);
     const e = {
@@ -64,7 +68,7 @@ export function createSquad(ctx) {
       yaw, pitch: 0, roll: 0, speed: SPEED, hp: HP, radius: RADIUS,
       targetable: true,           // 아직 격추 안 됨 = 총알·표시 대상
       state: 'approach', timer: 0,
-      burst: 0, shotT: 0, cool: 1 + Math.random() * 2, smokeT: 0,
+      burst: 0, shotT: 0, cool: 1 + Math.random() * 2, smokeT: 0, away: 0,
       latVec: latVec.clone(),     // 편대 자리 (다가올 때 옆으로 벌린 거리)
       jit: new THREE.Vector3((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 80),
       goal: new THREE.Vector3(),
@@ -113,18 +117,30 @@ export function createSquad(ctx) {
 
   function evade(e) {
     e.state = 'evade';
-    e.timer = 2.2 + Math.random() * 1.2;
+    e.timer = 1.2 + Math.random() * 0.8;   // 짧게 빠졌다가 금방 다시 공격
     right.crossVectors(e.forward, UP).normalize();
-    e.goal.copy(e.position).addScaledVector(e.forward, 500)
-      .addScaledVector(right, (Math.random() < 0.5 ? -1 : 1) * 350);
+    e.goal.copy(e.position).addScaledVector(e.forward, 300)
+      .addScaledVector(right, (Math.random() < 0.5 ? -1 : 1) * 220);
     e.goal.y = Math.max(140, e.position.y + (Math.random() - 0.3) * 200);
+  }
+
+  function bringBack(e, p) {
+    const a = p.yaw + (Math.random() - 0.5) * 0.9;              // 내 정면에서 좌우로 조금씩 다른 자리
+    e.position.set(p.position.x - Math.sin(a) * RETURN_DIST, 0, p.position.z - Math.cos(a) * RETURN_DIST);
+    e.position.y = clamp(p.position.y + (Math.random() - 0.3) * 120, 140, 900);
+    e.yaw = p.yaw + (Math.random() - 0.5) * 0.5; e.pitch = 0; e.roll = 0; // 나와 같은 쪽을 보고 날아감
+    e.speed = FLEE_SPEED;
+    e.state = 'flee'; e.timer = 5 + Math.random() * 3; e.away = 0; e.burst = 0;
+    e.goal.copy(e.position).addScaledVector(tmp.set(-Math.sin(e.yaw), 0, -Math.cos(e.yaw)), 1500);
+    e.cool = 1.5 + Math.random();
+    apply(e, 0);
   }
 
   const api = {
     list,
 
     // 내 비행기 앞쪽 dist 거리에 V자 편대를 만듦. angle: 앞에서 왼쪽(+)/오른쪽(-)으로 돌린 각
-    spawnFormation(count, { angle = 0, dist = 1400 } = {}) {
+    spawnFormation(count, { angle = 0, dist = 650 } = {}) {
       const p = ctx.player;
       const fwd = new THREE.Vector3(-Math.sin(p.yaw), 0, -Math.cos(p.yaw)).applyAxisAngle(UP, angle);
       const center = p.position.clone().addScaledVector(fwd, dist);
@@ -181,6 +197,10 @@ export function createSquad(ctx) {
         const dist = toP.length();
         toP.divideScalar(dist || 1);
 
+        // 화면 밖(내 앞 약 37도 밖)에 오래 있으면 → 내 앞쪽으로 다시 데려와서 화면에 자주 보이게
+        if (dist > AWAY_DIST && p.forward.dot(tmp.copy(toP).negate()) < 0.8) e.away += dt; else e.away = 0;
+        if (e.away > AWAY_TIME) bringBack(e, p);
+
         if (e.state === 'approach') {
           e.goal.copy(p.position).add(e.latVec);
           steer(e, e.goal, dt);
@@ -192,12 +212,16 @@ export function createSquad(ctx) {
             .addScaledVector(e.jit, clamp((dist - 200) / 600, 0, 1));
           steer(e, e.goal, dt);
           if (dist < 110) evade(e); // 부딪히기 전에 빠져나감
+        } else if (e.state === 'flee') {               // 내 앞에서 도망 다니다가 시간이 되면 공격
+          e.goal.y = e.position.y;
+          steer(e, e.goal, dt);
+          if ((e.timer -= dt) <= 0 || dist < 120) e.state = 'attack';
         } else if (e.state === 'evade') {
           steer(e, e.goal, dt);
           if ((e.timer -= dt) <= 0) e.state = 'attack';
         }
         // 빠르기: 멀면 따라붙고, 가까우면 느려짐 (아이들이 뒤를 잡을 수 있게)
-        const want = e.state === 'approach' ? SPEED : dist > 380 ? CATCHUP_SPEED : SPEED;
+        const want = e.state === 'flee' ? FLEE_SPEED : e.state === 'approach' ? SPEED : dist > 260 ? CATCHUP_SPEED : SPEED;
         e.speed += (want - e.speed) * Math.min(1, dt * 0.8);
         apply(e, dt);
 
